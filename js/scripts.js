@@ -114,7 +114,8 @@ function eliminateBadMoves(moveOptions, board){
   var y = 0;
   var weightVals = [];
 
-  for(var i = 0; i <= moveOptions.length; i++){
+  for(var i = 0; i < moveOptions.length; i++){
+    console.log("option", moveOptions[i]);
     if(moveOptions[i]){
       var valueChecks = resetDirectionValues();
       x = moveOptions[i][0];
@@ -130,6 +131,7 @@ function eliminateBadMoves(moveOptions, board){
           valueChecks[4] = board[x-1][y-1];
         }
       }
+      //TODO: Add 2 spaces out checks
       if(x < 6){
         // check +1
         valueChecks[1] = board[x+1][y];
@@ -149,7 +151,7 @@ function eliminateBadMoves(moveOptions, board){
       weightVals.push(0);
     }
   }
-  console.log("checks: " + valueChecks);
+  console.log("checks: " + valueChecks, valueChecks.length);
   console.log("Weights: " + weightVals);
   return chooseMove(weightVals);
 
@@ -172,15 +174,16 @@ function chooseMove(weightVals){
       }
     }
   }
-  console.log("Tiebreaker and choice", tieBreaker, choice);
   if(tieBreaker.length !== 0){
     var indexToChoose = Math.floor(Math.random()*tieBreaker.length);
     choice = tieBreaker[indexToChoose];
   }
+  console.log("Tiebreaker and choice", tieBreaker, choice);
   return choice;
 }
 
 function checkDirPairs(dirs){
+  console.log("Dirs: " + dirs);
   var weight = 0;
   // [0   , 1   ,   2  ,  3  ,  4  ,  5   ,   6  ,   7   ]
   // [left, right, bot, L bot, R bot, L top, R top, B bot]
@@ -191,14 +194,18 @@ function checkDirPairs(dirs){
     [2,7]  // check vertical
   ];
   pairs.forEach(function(pair){
+    console.log("Pair", pair);
     var a = pair[0];
     var b = pair[1];
     if(dirs[a] === dirs[b] && (dirs[a] === 0 || dirs[a] === 1)){
+      console.log("Matches!", weight);
       weight+=3;
     }
   });
   dirs.forEach(function(dir){
-    if(dir !== -1){
+    if(dir && dir !== -1){
+      console.log("Count", dir);
+      console.log(dir);
       weight++;
     }
   })
