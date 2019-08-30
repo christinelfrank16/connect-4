@@ -78,8 +78,143 @@ function checks(board) {
   return potentialMove;
 }
 
-function checkHorz(board) {
+Player.prototype.chooseAlternate = function(board){
+  var moveCoords = findPossibleMoveCoord(board.board);
+  var move = eliminateBadMoves(moveCoords, board.board);
+  return move;
+}
 
+function findPossibleMoveCoord(board) {
+  var potentialMoves = [];
+  for(var col=0; col<=6; col++){
+    for(var row=5; row>=0; row--){
+      console.log(board);
+      if(board[5][col] === 1 || board[5][col] === 0){
+        console.log("In Top row");
+        potentialMoves.push("");
+        break;
+      }
+      else if(board[row][col] === 1 || board[row][col] === 0){
+        console.log("Here:", col, row);
+        potentialMoves.push([col,row+1]);
+        break;
+      }
+      else if(board[0][col] !== 1 && board[0][col] !== 0){
+        potentialMoves.push([col,0]);
+        break;
+      }
+    }
+  }
+  console.log("Possible: " + potentialMoves);
+  return potentialMoves;
+}
+
+function eliminateBadMoves(moveOptions, board){
+  var x = 0;
+  var y = 0;
+  var weightVals = [];
+
+  for(var i = 0; i <= moveOptions.length; i++){
+    if(moveOptions[i]){
+      var valueChecks = resetDirectionValues();
+      x = moveOptions[i][0];
+      y = moveOptions[i][1];
+
+      if(x > 0){
+        // check -1
+        valueChecks[0] = board[x-1][y];
+        valueChecks[5] = board[x-1][y+1];
+        if(y > 0){
+          // check -1
+          valueChecks[2] = board[x][y-1];
+          valueChecks[4] = board[x-1][y-1];
+        }
+      }
+      if(x < 6){
+        // check +1
+        valueChecks[1] = board[x+1][y];
+        valueChecks[6] = board[x+1][y+1];
+        if(y > 0){
+          // check -1
+          valueChecks[2] = board[x][y-1];
+          valueChecks[3] = board[x+1][y-1];
+        }
+      }
+      if(y > 1){
+        valueChecks[7] = board[x][y-2];
+      }
+      weightVals.push(checkDirPairs(valueChecks));
+
+    } else {
+      weightVals.push(0);
+    }
+  }
+  console.log("checks: " + valueChecks);
+  console.log("Weights: " + weightVals);
+  return chooseMove(weightVals);
+
+}
+
+function chooseMove(weightVals){
+  var choice = -1;
+  var maxWeight = -1;
+  var tieBreaker = [];
+  for(var i = 0; i < weightVals.length; i++){
+    if(weightVals[i] > maxWeight){
+      maxWeight = weightVals[i];
+      choice = i;
+      tieBreaker = [];
+    } else if (weightVals[i] === maxWeight){
+      if(tieBreaker.includes(choice)){
+        tieBreaker.push(i);
+      } else {
+        tieBreaker.push(choice, i);
+      }
+    }
+  }
+  console.log("Tiebreaker and choice", tieBreaker, choice);
+  if(tieBreaker.length !== 0){
+    var indexToChoose = Math.floor(Math.random()*tieBreaker.length);
+    choice = tieBreaker[indexToChoose];
+  }
+  return choice;
+}
+
+function checkDirPairs(dirs){
+  var weight = 0;
+  // [0   , 1   ,   2  ,  3  ,  4  ,  5   ,   6  ,   7   ]
+  // [left, right, bot, L bot, R bot, L top, R top, B bot]
+  var pairs =[
+    [3,6], // check +slope diagonal
+    [4,5], // check -slope diagonal
+    [0,1], // check horizontal
+    [2,7]  // check vertical
+  ];
+  pairs.forEach(function(pair){
+    var a = pair[0];
+    var b = pair[1];
+    if(dirs[a] === dirs[b] && (dirs[a] === 0 || dirs[a] === 1)){
+      weight+=3;
+    }
+  });
+  dirs.forEach(function(dir){
+    if(dir !== -1){
+      weight++;
+    }
+  })
+  return weight;
+}
+
+function resetDirectionValues(){
+  var left = -1;
+  var right = -1;
+  var bot = -1;
+  var lBot = -1;
+  var rBot = -1;
+  var lTop = -1;
+  var rTop = -1;
+  var bBot = -1;
+  return array = [left, right, bot, lBot, rBot, lTop, rTop, bBot];
 }
 
 //////////// Board Object ////////////////
@@ -319,7 +454,7 @@ $(document).ready(function(){
     $("#playArea").fadeIn("slow");
 
     if(board.turn === 1) {
-      colNum = cpu.chooseBetter(board);
+      colNum = cpu.chooseAlternate(board);
       playTurn(board, colNum);
     }
   });
@@ -332,7 +467,7 @@ $(document).ready(function(){
 
       if(board.players[1].isAI && board.turn === 1) {
         var thinkTime = (Math.floor(Math.random()*4)+2)*1000;
-        colNum = board.players[1].chooseBetter(board);
+        colNum = board.players[1].chooseAlternate(board);
         setTimeout(playTurn, thinkTime, board, colNum);
       }
     } else {
@@ -354,7 +489,7 @@ $(document).ready(function(){
     $("#play-mode").fadeOut("slow");
 
     if(board.players[1].isAI && board.turn === 1) {
-      colNum = board.players[1].chooseBetter(board);
+      colNum = board.players[1].chooseAlternate(board);
       playTurn(board, colNum);
     }
   });
